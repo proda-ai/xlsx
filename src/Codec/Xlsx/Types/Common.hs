@@ -264,10 +264,16 @@ dateFromNumber b d = UTCTime day diffTime
 
 -- | Converts datetime into serial value
 dateToNumber :: Fractional a => DateBase -> UTCTime -> a
-dateToNumber b (UTCTime day diffTime) = numberOfDays + fractionOfOneDay
+dateToNumber b ut@(UTCTime day diffTime) = numberOfDays + fractionOfOneDay
   where
-    numberOfDays = fromIntegral (diffDays day $ baseDate b)
+    numberOfDays = fromIntegral (diffDays excel1900CorrectedDay $ baseDate b)
     fractionOfOneDay = realToFrac diffTime / (24 * 60 * 60)
+    -- For historical reasons, Excel thinks 1900 is a leap year (https://docs.microsoft.com/en-gb/office/troubleshoot/excel/wrongly-assumes-1900-is-leap-year).
+    -- So dates strictly before March 1st 1900 need to be corrected.
+    marchFirst1900              = fromGregorian 1900 3 1
+    excel1900CorrectedDay = if day < marchFirst1900
+      then addDays (-1) day
+      else day
 
 {-------------------------------------------------------------------------------
   Parsing
